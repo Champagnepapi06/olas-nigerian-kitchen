@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingCart, Search } from 'lucide-react';
+import { Menu, X, ShoppingCart, Search, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavbarProps {
   onSearch?: (query: string) => void;
@@ -14,6 +15,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const { getTotalItems } = useCart();
+  const { user, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -81,6 +83,19 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 )}
               </Button>
             </Link>
+            {user ? (
+              <Button variant="outline" onClick={() => signOut()}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline">
+                  <User className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -135,6 +150,21 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 )}
               </Button>
             </Link>
+
+            {/* Mobile Auth Button */}
+            {user ? (
+              <Button variant="outline" onClick={() => { signOut(); setIsOpen(false); }} className="w-full">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            ) : (
+              <Link to="/auth" onClick={() => setIsOpen(false)}>
+                <Button variant="outline" className="w-full">
+                  <User className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
         )}
       </div>
