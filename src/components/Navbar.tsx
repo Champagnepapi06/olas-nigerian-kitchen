@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingCart, Search, User, LogOut } from 'lucide-react';
+import { Menu, X, ShoppingCart, Search, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/context/CartContext';
@@ -84,10 +84,18 @@ const Navbar = ({ onSearch }: NavbarProps) => {
               </Button>
             </Link>
             {user ? (
-              <Button variant="outline" onClick={() => signOut()}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost" size="sm">
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button variant="outline" onClick={() => signOut()}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </>
             ) : (
               <Link to="/auth">
                 <Button variant="outline">
@@ -153,10 +161,18 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 
             {/* Mobile Auth Button */}
             {user ? (
-              <Button variant="outline" onClick={() => { signOut(); setIsOpen(false); }} className="w-full">
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
+              <>
+                <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button variant="outline" onClick={() => { signOut(); setIsOpen(false); }} className="w-full">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </>
             ) : (
               <Link to="/auth" onClick={() => setIsOpen(false)}>
                 <Button variant="outline" className="w-full">
