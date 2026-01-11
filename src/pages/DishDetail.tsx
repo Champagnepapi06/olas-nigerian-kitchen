@@ -1,23 +1,81 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { dishes } from '@/data/dishes';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
+
+// Import local images for fallback
+import jollofRice from '@/assets/jollof-rice.jpg';
+import ofadaRice from '@/assets/ofada-rice.jpg';
+import egusiSoup from '@/assets/egusi-soup.jpg';
+import efoRiro from '@/assets/efo-riro.jpg';
+import suya from '@/assets/suya.jpg';
+import moiMoi from '@/assets/moi-moi.jpg';
+import akara from '@/assets/akara.jpg';
+import poundedYam from '@/assets/pounded-yam.jpg';
+
+const imageMap: Record<string, string> = {
+  '/dishes/jollof-rice.jpg': jollofRice,
+  '/dishes/ofada-rice.jpg': ofadaRice,
+  '/dishes/egusi-soup.jpg': egusiSoup,
+  '/dishes/efo-riro.jpg': efoRiro,
+  '/dishes/suya.jpg': suya,
+  '/dishes/moi-moi.jpg': moiMoi,
+  '/dishes/akara.jpg': akara,
+  '/dishes/pounded-yam.jpg': poundedYam,
+};
 
 const DishDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  
+  const { data: product, isLoading, error } = useProduct(id || '');
 
-  const dish = dishes.find((d) => d.id === id);
+  const dish = useMemo(() => {
+    if (!product) return null;
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: Number(product.price),
+      image: imageMap[product.image_url] || product.image_url,
+      category: product.category as 'rice' | 'soup' | 'snack' | 'swallow',
+      ingredients: product.ingredients || [],
+      isPopular: product.is_popular || false,
+    };
+  }, [product]);
 
-  if (!dish) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4">
+            <div className="grid lg:grid-cols-2 gap-12">
+              <Skeleton className="h-96 w-full rounded-lg" />
+              <div className="space-y-6">
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-12 w-3/4" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !dish) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -88,7 +146,7 @@ const DishDetail = () => {
                 </p>
               </div>
 
-              {dish.ingredients && (
+              {dish.ingredients && dish.ingredients.length > 0 && (
                 <Card>
                   <CardContent className="pt-6">
                     <h2 className="text-xl font-semibold mb-3">Ingredients</h2>

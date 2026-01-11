@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -8,14 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import { useCreateOrder } from '@/hooks/useOrders';
+import { checkoutSchema, CheckoutFormData } from '@/lib/validations';
 import { toast } from 'sonner';
 
 const Checkout = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const createOrder = useCreateOrder();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CheckoutFormData>({
     fullName: '',
     email: '',
     phone: '',
@@ -24,34 +28,94 @@ const Checkout = () => {
     notes: '',
   });
 
+  const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>>>({});
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast.error('Please sign in to checkout');
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
+  // Redirect to cart if empty
+  useEffect(() => {
+    if (cart.length === 0) {
+      navigate('/cart');
+    }
+  }, [cart.length, navigate]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (errors[name as keyof CheckoutFormData]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const result = checkoutSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const fieldErrors: Partial<Record<keyof CheckoutFormData, string>> = {};
+      result.error.errors.forEach(err => {
+        const field = err.path[0] as keyof CheckoutFormData;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      return false;
+    }
+    
+    setErrors({});
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
-      toast.error('Please fill in all required fields');
+    if (!validateForm()) {
+      toast.error('Please fix the errors in the form');
       return;
     }
 
-    setIsProcessing(true);
-    
-    // Simulate order processing
-    setTimeout(() => {
-      toast.success('Order placed successfully!');
-      clearCart();
-      navigate('/');
-      setIsProcessing(false);
-    }, 2000);
+    if (!user) {
+      toast.error('Please sign in to place an order');
+      navigate('/auth');
+      return;
+    }
+
+    const totalAmount = getTotalPrice() + 500; // Including delivery fee
+
+    createOrder.mutate(
+      {
+        formData,
+        cartItems: cart,
+        totalAmount,
+      },
+      {
+        onSuccess: () => {
+          clearCart();
+          navigate('/dashboard');
+        },
+      }
+    );
   };
 
-  if (cart.length === 0) {
-    navigate('/cart');
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-primary/20" />
+          <div className="h-4 w-32 bg-muted rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || cart.length === 0) {
     return null;
   }
 
@@ -80,8 +144,11 @@ const Checkout = () => {
                           name="fullName"
                           value={formData.fullName}
                           onChange={handleChange}
-                          required
+                          className={errors.fullName ? 'border-destructive' : ''}
                         />
+                        {errors.fullName && (
+                          <p className="text-sm text-destructive">{errors.fullName}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number *</Label>
@@ -91,8 +158,11 @@ const Checkout = () => {
                           type="tel"
                           value={formData.phone}
                           onChange={handleChange}
-                          required
+                          className={errors.phone ? 'border-destructive' : ''}
                         />
+                        {errors.phone && (
+                          <p className="text-sm text-destructive">{errors.phone}</p>
+                        )}
                       </div>
                     </div>
                     
@@ -104,8 +174,11 @@ const Checkout = () => {
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        required
+                        className={errors.email ? 'border-destructive' : ''}
                       />
+                      {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email}</p>
+                      )}
                     </div>
                     
                     <div className="space-y-2">
@@ -115,8 +188,11 @@ const Checkout = () => {
                         name="address"
                         value={formData.address}
                         onChange={handleChange}
-                        required
+                        className={errors.address ? 'border-destructive' : ''}
                       />
+                      {errors.address && (
+                        <p className="text-sm text-destructive">{errors.address}</p>
+                      )}
                     </div>
                     
                     <div className="space-y-2">
@@ -126,8 +202,11 @@ const Checkout = () => {
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
-                        required
+                        className={errors.city ? 'border-destructive' : ''}
                       />
+                      {errors.city && (
+                        <p className="text-sm text-destructive">{errors.city}</p>
+                      )}
                     </div>
                     
                     <div className="space-y-2">
@@ -139,7 +218,11 @@ const Checkout = () => {
                         onChange={handleChange}
                         placeholder="Any special requests or delivery instructions..."
                         rows={3}
+                        className={errors.notes ? 'border-destructive' : ''}
                       />
+                      {errors.notes && (
+                        <p className="text-sm text-destructive">{errors.notes}</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -188,9 +271,9 @@ const Checkout = () => {
                       type="submit"
                       size="lg"
                       className="w-full"
-                      disabled={isProcessing}
+                      disabled={createOrder.isPending}
                     >
-                      {isProcessing ? 'Processing...' : 'Place Order'}
+                      {createOrder.isPending ? 'Processing...' : 'Place Order'}
                     </Button>
                   </CardContent>
                 </Card>

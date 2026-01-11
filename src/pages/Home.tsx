@@ -1,15 +1,47 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '@/components/Hero';
 import DishCard from '@/components/DishCard';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { dishes } from '@/data/dishes';
+import { Skeleton } from '@/components/ui/skeleton';
+import { usePopularProducts } from '@/hooks/useProducts';
 import { ArrowRight } from 'lucide-react';
 
+// Import local images for fallback
+import jollofRice from '@/assets/jollof-rice.jpg';
+import ofadaRice from '@/assets/ofada-rice.jpg';
+import egusiSoup from '@/assets/egusi-soup.jpg';
+import efoRiro from '@/assets/efo-riro.jpg';
+import suya from '@/assets/suya.jpg';
+import moiMoi from '@/assets/moi-moi.jpg';
+import akara from '@/assets/akara.jpg';
+import poundedYam from '@/assets/pounded-yam.jpg';
+
+const imageMap: Record<string, string> = {
+  '/dishes/jollof-rice.jpg': jollofRice,
+  '/dishes/ofada-rice.jpg': ofadaRice,
+  '/dishes/egusi-soup.jpg': egusiSoup,
+  '/dishes/efo-riro.jpg': efoRiro,
+  '/dishes/suya.jpg': suya,
+  '/dishes/moi-moi.jpg': moiMoi,
+  '/dishes/akara.jpg': akara,
+  '/dishes/pounded-yam.jpg': poundedYam,
+};
+
 const Home = () => {
-  const featuredDishes = dishes.filter((dish) => dish.isPopular).slice(0, 4);
+  const { data: products, isLoading } = usePopularProducts();
+
+  const featuredDishes = products?.map(product => ({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    price: Number(product.price),
+    image: imageMap[product.image_url] || product.image_url,
+    category: product.category as 'rice' | 'soup' | 'snack' | 'swallow',
+    ingredients: product.ingredients || [],
+    isPopular: product.is_popular || false,
+  })) || [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -26,11 +58,23 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {featuredDishes.map((dish) => (
-              <DishCard key={dish.id} dish={dish} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="h-48 w-full rounded-lg" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {featuredDishes.map((dish) => (
+                <DishCard key={dish.id} dish={dish} />
+              ))}
+            </div>
+          )}
           
           <div className="text-center">
             <Link to="/menu">
