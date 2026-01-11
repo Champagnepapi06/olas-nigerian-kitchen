@@ -7,6 +7,7 @@ import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import Menu from "./pages/Menu";
 import DishDetail from "./pages/DishDetail";
 import Cart from "./pages/Cart";
@@ -27,6 +28,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/menu" element={<Menu />} />
               <Route path="/dish/:id" element={<DishDetail />} />
               <Route path="/cart" element={<Cart />} />

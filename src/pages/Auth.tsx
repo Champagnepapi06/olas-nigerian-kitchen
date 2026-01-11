@@ -19,7 +19,7 @@ const Auth = () => {
 
   // Redirect if already logged in
   if (user) {
-    navigate('/');
+    navigate('/dashboard');
     return null;
   }
 
@@ -31,7 +31,7 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (!error) {
-          navigate('/menu');
+          navigate('/dashboard');
         }
       } else {
         if (!fullName.trim()) {
@@ -40,7 +40,7 @@ const Auth = () => {
         }
         const { error } = await signUp(email, password, fullName);
         if (!error) {
-          navigate('/menu');
+          navigate('/dashboard');
         }
       }
     } finally {
