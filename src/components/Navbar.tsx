@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ShoppingCart, Search, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
+  const navigate = useNavigate();
   const { getTotalItems } = useCart();
   const { user, signOut } = useAuth();
 
@@ -23,6 +24,11 @@ const Navbar = ({ onSearch }: NavbarProps) => {
     const query = e.target.value;
     setSearchQuery(query);
     onSearch?.(query);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/auth', { replace: true });
   };
 
   const navLinks = [
@@ -91,7 +97,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                     Dashboard
                   </Button>
                 </Link>
-                <Button variant="outline" onClick={() => signOut()}>
+                <Button variant="outline" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
                 </Button>
@@ -168,7 +174,14 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                     Dashboard
                   </Button>
                 </Link>
-                <Button variant="outline" onClick={() => { signOut(); setIsOpen(false); }} className="w-full">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    await handleLogout();
+                    setIsOpen(false);
+                  }}
+                  className="w-full"
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
                 </Button>
@@ -189,3 +202,4 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 };
 
 export default Navbar;
+
