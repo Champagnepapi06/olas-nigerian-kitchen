@@ -40,39 +40,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
-        }
-      }
+        },
+      },
     });
-    
+
     if (error) {
       toast.error(error.message);
     } else {
+      // Defense-in-depth: immediately update local auth state so route guards
+      // don't briefly treat the user as logged out right after signup.
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+      }
       toast.success('Account created successfully!');
     }
-    
+
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
+
     if (error) {
       toast.error(error.message);
     } else {
+      // Prevent redirect “glitch” by setting auth state immediately.
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+      }
       toast.success('Welcome back!');
     }
-    
+
     return { error };
   };
 
