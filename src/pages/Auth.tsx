@@ -47,20 +47,16 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (!error) {
-          navigate('/dashboard');
-        }
+        await signIn(email, password);
       } else {
         if (!fullName.trim()) {
-          setLoading(false);
           return;
         }
-        const { error } = await signUp(email, password, fullName);
-        if (!error) {
-          navigate('/dashboard');
-        }
+        await signUp(email, password, fullName);
       }
+
+      // Navigation is handled by the useEffect above once `user` is available.
+      // This avoids a brief “logged out” state that can cause route-guard flicker.
     } finally {
       setLoading(false);
     }
